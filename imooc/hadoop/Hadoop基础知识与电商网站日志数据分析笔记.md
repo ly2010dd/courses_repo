@@ -324,7 +324,7 @@ http://archive.cloudera.com/cdh5/cdh/5/hadoop-2.6.0-cdh5.15.1/hadoop-project-dis
     - Reduce处理
     - 输出结果
 - MapReduce源码流程图
-    - ![HDFS Checkpoint机制流程](imgs/hdfs-checkpoint-process.png)
+    - ![MapReduce源码流程图](imgs/mapreduce-src-process.png)
 - MapReduce编程模型之核心概念(务必要掌握原理！面试常问)
     - split
     - InputFormat
