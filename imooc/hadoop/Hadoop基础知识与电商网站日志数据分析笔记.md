@@ -331,3 +331,15 @@ http://archive.cloudera.com/cdh5/cdh/5/hadoop-2.6.0-cdh5.15.1/hadoop-project-dis
     - OutputFormat
     - Combiner
     - Partitioner
+
+### 4-10 Combiner操作
+- ![Combiner操作](imgs/mapreduce-combiner-process.png)
+- Combiner的优点：减少IO，抬升作业的执行性能
+- Combiner的局限性：求平均数、除法等操作
+
+### 4-11至4-17看代码Access
+- mr/access下
+
+### 4-17自定义Partitioner
+- Mapper的输出数据 通过shuffle 按默认的key（也可自定义）分发到不同的reducer中去
+- ![MapReduceWc全流程](imgs/mapreduce-wc-whole-process.png)
