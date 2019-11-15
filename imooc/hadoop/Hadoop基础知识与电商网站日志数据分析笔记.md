@@ -28,7 +28,7 @@
 - 数据隐私
 - 数据源复杂多样
 
-# 第二幢 初识Hadoop
+# 第二章 初识Hadoop
 
 ---
 - Hadoop概述
@@ -298,3 +298,36 @@ http://archive.cloudera.com/cdh5/cdh/5/hadoop-2.6.0-cdh5.15.1/hadoop-project-dis
         - 在${hadoop.tmp.dir}/dfs/name/current
 - checkpoint机制
     ![HDFS Checkpoint机制流程](imgs/hdfs-checkpoint-process.png)
+
+# 第四章 分布式计算框架MapReduce
+
+### 4-2 MapReduce概述
+- Google MapReduce论文发表于2004.12
+- Hadoop MapReduce是Google MapReduce的克隆版
+- MapReduce优点
+    - 海量数据离线处理
+    - 易开发，与自己开发相比
+    - 易运行
+- MapReduce缺点
+    - 实时流式计算
+
+### 4-3 MapReduce编程模型
+- 作业差分成Map阶段、Reduce阶段
+- Map阶段：Map Tasks
+- Reduce阶段：Reduce Tasks
+
+### 4-4 MapReduce编程模型详解
+- MapReduce编程模型执行步骤
+    - 准备map处理的输入数据
+    - Mapper处理
+    - Shuffle
+    - Reduce处理
+    - 输出结果
+- MapReduce源码流程图
+    - ![HDFS Checkpoint机制流程](imgs/hdfs-checkpoint-process.png)
+- MapReduce编程模型之核心概念(务必要掌握原理！面试常问)
+    - split
+    - InputFormat
+    - OutputFormat
+    - Combiner
+    - Partitioner
