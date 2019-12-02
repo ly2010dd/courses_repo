@@ -1,0 +1,53 @@
+V1
+
+统计页面的浏览量
+    select count(1) from xxx;
+    一行记录做成一个固定的KEY，value赋值为1
+
+统计各个省份的浏览量
+    select province count(1) from xxx group by province;
+    地市信息通过ip解析得到
+    ip解析： 收费
+    这里用的开源工具IPParser
+
+统计页面的访问量
+    把url符合规则的pageId获取到，在url的topicId=后
+
+
+V1存在的问题=================> 每个MR作业都去全量读取待处理的原始日志，如果数据量很大是不是会疯了？
+
+ETL: 全量数据不方便直接进行计算，最好进行一步处理后再进行相应的维度统计分析
+    解析出你需要的字段：ip==>城市信息
+    去除一些你不需要的字段：太多了。。。
+    需要的数据：ip time url page_id country province city
+
+
+打包部署到Yarn集群上运行
+    修改个APP的输入输出为args[]
+    pom.xml中添加一段
+        <build>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.3</version>
+                    <configuration>
+                        <source>1.8</source>
+                        <target>1.8</target>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </build>
+    mvn clean package -DskipTests
+    上传trackinfo_20130721.data到data下
+    上传ip/qqwry.dat到lib下
+    上传jar包到lib下
+    hadoop fs -mkdir -p /eshopproject/input/raw
+    hadoop fs -put trackinfo_20130721.data /eshopproject/input/raw
+    写一个运行的shell pv.sh
+        hadoop jar /home/hadoop/lib/hadoop-train-v2-1.0.jar com.imooc.bigdata.hadoop.mr.eshopproject.mr.PVStatApp hdfs://hadoop000:8020/eshopproject/input/raw/ hdfs://hadoop000:8020/eshopproject/output/v1/pvstat/
+
+后续扩展
+    数据如何从hdfs倒回到MySQL===>sqoop
+    原始数据如何压缩
+    数据大了之后etl后如何通过列存的方式orc parquet等

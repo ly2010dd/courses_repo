@@ -67,7 +67,7 @@
     - 缺点：cm不开源、与社区版本有些许出入
     - 国内市场占60-70%
 - HDP（Hortonworks）
-    - 优点：原装Hadoop、春开源、支持tez
+    - 优点：原装Hadoop、纯开源、支持tez
     - 缺点：企业级安全不开源、文档不好
 - MapR（不建议）
 - 优先考虑CDH和HDP，这两种安装部署方面更方便
@@ -299,6 +299,7 @@ http://archive.cloudera.com/cdh5/cdh/5/hadoop-2.6.0-cdh5.15.1/hadoop-project-dis
 - checkpoint机制
     ![HDFS Checkpoint机制流程](imgs/hdfs-checkpoint-process.png)
 
+
 # 第四章 分布式计算框架MapReduce
 
 ### 4-2 MapReduce概述
@@ -343,3 +344,444 @@ http://archive.cloudera.com/cdh5/cdh/5/hadoop-2.6.0-cdh5.15.1/hadoop-project-dis
 ### 4-17自定义Partitioner
 - Mapper的输出数据 通过shuffle 按默认的key（也可自定义）分发到不同的reducer中去
 - ![MapReduceWc全流程](imgs/mapreduce-wc-whole-process.png)
+
+
+# 第五章 资源调度框架YARN
+
+### 5-1 课程目录
+
+### 5-2 YARN产生背景
+- MapReduce1.x存在的问题
+    - master/slave架构：JabTracker/TaskTracker
+    - ![MapReduce1.x架构](imgs/mapreduce1.x-framework.png)
+    - JobTracker: 单点、压力大
+    - 仅仅只能支持mapreduce作业    
+- 资源利用率低
+    - 所有的计算框架都运行在一个集群中，共享一个集群的资源，按需分配
+
+### 5-3 YARN概述
+- YARN概述
+    - Yet Another Resource Negotiator
+    - 通用的资源管理系统
+    - 为上层应用提供统一的资源管理和调度
+- 官网文档
+    - http://archive.cloudera.com/cdh5/cdh/5/hadoop-2.6.0-cdh5.15.1/hadoop-yarn/hadoop-yarn-site/YARN.html
+    - master: resource management: a global ResourceManager (RM)
+    - job scheduling/monitoring: per-application ApplicationMaster (AM)
+    - slave: NodeManager (NM)
+
+### 5-4 YARN架构详解
+- 架构图
+    - ![Yarn架构图](imgs/yarn-architecture.png)
+- master/slave: RM/NM
+- Client、ResourceManager、NodeManager、ApplicationMaster
+    - Client: 
+        - 向RM提交任务、杀死任务等
+    - ApplicationMaster:     
+        - 每个应用程序对应一个AM
+        - AM向RM申请资源用于在NM上启动对应的task
+        - 数据切分
+        - 为每个task向RM申请资源（container）
+        - 与NM通信
+        - 任务的监控
+    - NodeManager:    
+        - 多个
+        - 干活
+        - 向RM发送心跳信息、任务的执行情况
+        - 接受来自RM的请求来启动任务
+        - 处理来自AM的命令
+    - ResourceManager:         
+        - 集群中同一时刻对外提供服务的只有一个
+        - 负责资源相关
+        - 处理来自客户端的请求：提交、杀死
+        - 启动/监控AM
+        - 监控NM
+    - Container:
+        - 任务的运行抽象
+        - memory、cpu...
+        - task是运行在container里面的
+        - 可以运行am、也可以运行map/reduce task
+
+### 5-5 YARN执行流程
+- YARN执行流程
+    - ![Yarn执行流程](imgs/yarn-execute-process.png)
+    1. 客户端提交一个应用程序到RM
+    2. RM在一个NM分配第一个Container
+    3. Container中运行作业的AM
+    4. AM启动后注册到RM上，并向RM申请资源回来
+    5. AM在几个NM上启动申请的资源Container
+    6. Container中运行Appication的task
+
+### 5-6 YARN环境部署
+- 官网
+    - http://archive.cloudera.com/cdh5/cdh/5/hadoop-2.6.0-cdh5.15.1/hadoop-project-dist/hadoop-common/SingleCluster.html
+- 流程
+    - etc/hadoop/mapred-site.xml
+        ```
+        <configuration>
+            <property>
+                <name>mapreduce.framework.name</name>
+                <value>yarn</value>
+            </property>
+        </configuration>
+        ```
+    - etc/hadoop/yarn-site.xml
+        ```
+        <configuration>
+            <property>
+                <name>yarn.nodemanager.aux-services</name>
+                <value>mapreduce_shuffle</value>
+            </property>
+            <property>
+                <name>hadoop.tmp.dir</name>
+                <value>/home/hadoop/app/tmp</value>
+            </property>
+        </configuration>
+        ```
+    - Start ResourceManager daemon and NodeManager daemon
+        ```
+        $ sbin/start-yarn.sh
+        ```
+    - Browse the web interface for the ResourceManager
+        ```
+        http://localhost:8088/
+        ```
+    - Run a MapReduce job
+    - Stop the deamons
+        ```
+        $ sbin/stop-yarn.sh
+        ```
+
+### 5-7 运行hadoop自带的example程序
+    ```
+    cd $HADOOP_HOME/share/hadoop/mapreduce/
+    hadoop jar hadoop-mapreduce-examples-2.6.0-cdh5.15.1.jar pi 2 3
+    ```
+
+### 5-8 提交自己开发的MR作业到YARN上执行
+    ```
+    1) mvn clean package -DskipTests
+    2) 把编译出来的jar(target/xxx.jar)以及测试数据上传到服务器上
+    3) 执行作业
+        hadoop jar xxx.jar 完整的类名（包名+类名） args...
+        hadoop jar hadoop-train-v2-1.0.jar com.imooc.bigdata.hadoop.mr.access.AccesYarnApp /access/input/access.log /access/output/
+    4) 到YARN UI(hadoop000:8088)去观察
+    5) 观察输出目录
+    ```
+    
+# 第六章 电商项目实战
+
+### 6-4 日志内容介绍
+- trackinfo_20130721.txt
+- 日志字段说明
+    - 第二个字段: url
+    - 第十四字段: ip
+    - 第十八字段: time
+    
+### 6-7 项目需求
+- 统计页面的浏览量
+- 统计各省份的浏览量
+- 统计页面的访问量
+
+### 6-8 数据处理流程及技术框架
+- ![数据处理流程及技术框架](imgs/eshop-practice-data-process-framework.png)
+- 看eshopproject代码
+
+
+# 第七章 数据仓库Hive
+
+### 7-2 Hive产生背景
+- MapReduce编程的不便性
+- 传统RDBMS人员的需要
+    - HDFS上的文件没有schema的概念
+
+### 7-3 Hive是什么
+- Hive概念
+    - 由Facebook开源
+    - 用于解决海量结构化日志数据统计问题
+    - 构建在hadoop上的数据仓库
+    - 提供的SQL查询语言---HQL
+    - 底层支持多种不同的执行引擎
+        - Hive1.x只支持MR
+        - Hive2.x支持MR/Tez/Spark(默认)
+
+### 7-4 为什么使用Hive
+- 为什么
+    - 简单、容易上手
+    - 为超大数据集设计的计算扩展能力
+    - 统一的元数据管理
+        - Hive数据是存放在HDFS
+        - 元数据信息（记录数据的数据）是存放在MySQL中
+        - SQL on Hadoop: Hive、Spark SQL、impala...
+
+### 7-5 Hive在Hadoop生态圈的位置
+
+### 7-6 Hive体系架构
+- ![Hive体系架构图](imgs/hive-architecture.png)
+- 体系架构详解
+    - client: shell、thrift/jdbc(server/jdbc)、WebUI(HUE、Zeppelin)
+    - metestore:
+        - database: name、location、owner...
+        - table: name、location、owner、column name/type...
+        - 一般存在MySQL下
+
+### 7-7 Hive部署架构
+- ![Hive部署架构图](imgs/hive-deploy-architecture.png)
+- 部署体系架构详解
+    - hive元数据管理有两个自带的数据库：Derby（只能进行但session操作，一般不推荐使用）、MySQL（生产上使用）
+    - MySQL存表库等元数据信息，生产上一定要有主备，hive连vip，解决MySQL单点问题
+    - Hive提交到RM上
+    - Hive是一个客户端而已，不涉及到集群的概念
+
+### 7-8 Hive与RDBMS的区别
+- 支持的
+    - 都支持SQL
+    - 都支持分布式模式
+- 区别的
+    - RDBMS实时的，结果返回延迟低
+    - Hive是转换为MR执行的，结果返回延迟高，适合批处理的
+    - 分布式模式差别比较大，MySQL集群小且部署在专用的昂贵的机器上（PB级数据），Hive构建在普通机器的hadoop集群上（PB数据只是毛毛雨）
+
+### 7-9 Hive部署
+- 下载
+    - http://archive.cloudera.com/cdh5/cdh/5/
+- 解压
+- 添加HIVE_HOME到系统环境变量
+- 修改配置
+    - hive-env.sh
+        - 配置HADOOP_HOME
+    - hive-site.xml需要自己创建一个
+        ```
+        <?xml version="1.0"?>
+        <?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+        
+        <configuration>
+          <property>
+            <name>javax.jdo.option.ConnectionURL</name>
+            <value>jdbc:mysql://hadoop000:3306/hadoop_hive?createDatabaseIfNotExist=true</value>
+          </property>
+        
+          <property>
+            <name>javax.jdo.option.ConnectionDriverName</name>
+            <value>com.mysql.jdbc.Driver</value>
+          </property>
+        
+          <property>
+            <name>javax.jdo.option.ConnectionUserName</name>
+            <value>root</value>
+          </property>
+        
+          <property>
+            <name>javax.jdo.option.ConnectionPassword</name>
+            <value>root</value>
+          </property>
+        </configuration>
+        ```
+- 拷贝MySQL驱动包到$HIVE_HOME/lib下
+- 前提是要安装一个MySQL数据库，yum install去安装
+
+### 7-10 Hive快速入门
+- 部署好mysql后
+- 运行hive客户端
+```
+bin/hive
+```
+- hive中创建一个db
+```
+create database test_db;
+#之后进入mysql中看多了一个hadoop_hive数据库，存hive的元数据信息
+#test_db在hadoop上存储位置为dfs://hadoop000:8020/user/hive/warehouse/test_db.db
+```
+- 创建数据
+```
+vim helloworld.txt
+1       zhangsan
+2       lisi
+3       wangwu
+```
+- hive中建表
+```
+create table helloworld(id int, name string) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t';
+```
+- 导入数据
+```
+load data local inpath '/home/hadoop/data/helloworld.txt' overwrite into table helloworld;
+```
+- 查询数据
+```
+select * from helloworld;
+```
+- 统计数据自动转换成MR
+```
+select count(*) from helloworld;
+```
+- 查看yarn前端
+```
+http://hadoop000:8088
+```
+
+### 7-11 Hive 数据库DDL
+- 官网
+- Hive数据抽象/结构
+    database    --->HDFS一个目录
+        table   --->HDFS一个目录
+            partition   分区表  --->HDFS一个目录
+                bucket  分桶    --->HDFS一个文件
+- 举例
+    ```
+    CREATE (DATABASE|SCHEMA) [IF NOT EXISTS] database_name
+      [COMMENT database_comment]
+      [LOCATION hdfs_path]
+      [WITH DBPROPERTIES (property_name=property_value, ...)];
+      
+    CREATE DATABASE IF NOT EXISTS hive;
+    默认存储位置在hdfs://hadoop000:8020/user/hive/warehouse下，可配置修改
+    
+    CREATE DATABASE IF NOT EXISTS hive2 LOCATION '/test/location';
+    
+    CREATE DATABASE IF NOT EXISTS hive3 WITH DBPROPERTIES('creator'='liy');
+    
+    desc database hive;
+    desc database extended hive3;
+    
+    显示当前命令是在哪个库
+    set hive.cli.print.current.db;
+    set hive.cli.print.current.db=true;
+    ```
+
+### 7-12 Hive 表DDL
+- 举例
+    ```
+    
+    CREATE [TEMPORARY] [EXTERNAL] TABLE [IF NOT EXISTS] [db_name.]table_name    -- (Note: TEMPORARY available in Hive 0.14.0 and later)
+      [(col_name data_type [column_constraint_specification] [COMMENT col_comment], ... [constraint_specification])]
+      [COMMENT table_comment]
+      [PARTITIONED BY (col_name data_type [COMMENT col_comment], ...)]
+      [CLUSTERED BY (col_name, col_name, ...) [SORTED BY (col_name [ASC|DESC], ...)] INTO num_buckets BUCKETS]
+      [SKEWED BY (col_name, col_name, ...)                  -- (Note: Available in Hive 0.10.0 and later)]
+         ON ((col_value, col_value, ...), (col_value, col_value, ...), ...)
+         [STORED AS DIRECTORIES]
+      [
+       [ROW FORMAT row_format] 
+       [STORED AS file_format]
+         | STORED BY 'storage.handler.class.name' [WITH SERDEPROPERTIES (...)]  -- (Note: Available in Hive 0.6.0 and later)
+      ]
+      [LOCATION hdfs_path]
+      [TBLPROPERTIES (property_name=property_value, ...)]   -- (Note: Available in Hive 0.6.0 and later)
+      [AS select_statement];   -- (Note: Available in Hive 0.5.0 and later; not supported for external tables)
+    
+    
+    CREATE TABLE emp(
+    empno int,
+    ename string,
+    job string,
+    mgr int,
+    hiredate string,
+    sal double,
+    comm double,
+    deptno int
+    ) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t';
+    
+    #查看表结构
+    desc emp;
+    desc exended emp;
+    desc formatted emp;
+    
+    ```
+    
+### 7-12 Hive DML之加载和导出数据
+```
+# 导入
+LOAD DATA [LOCAL] INPATH 'filepath' [OVERWRITE] INTO TABLE tablename [PARTITION (partcol1=val1, partcol2=val2 ...)]
+
+LOCAL: 本地系统，如果没有LOCAL就是指HDFS的路径
+OVERWORITE: 是否数据覆盖，如果没有那么就是数据追加
+
+LOAD DATA LOCAL INPATH '/home/hadoop/data/emp.txt' OVERWRITE INTO TABLE emp;
+
+create table emp1 as select * from emp;
+
+# 导出
+INSERT OVERWRITE [LOCAL] DIRECTORY directory1
+[ROW FORMAT row_format] [STORED AS file_format] (Note: Only available starting with Hive 0.11.0)
+SELECT ... FROM ...
+
+INSERT OVERWRITE LOCAL DIRECTORY '/tmp/hive/'
+ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t'
+SELECT empno,ename,sal,deptno from emp;
+
+在hive中insert、update语句绝对不推荐使用，非常耗费性能，hive是基于离线批处理的
+
+```
+
+# 第八章 电商项目实战Hive实现
+
+### 8-1 课程目录
+
+### 8-2 Hive外部表
+- MANAGED_TABLE: 内部表
+    - 删除表: HDFS上的数据被删除，Meta信息也被删除
+- EXTERNAL_TABLE: 外部表
+    - 语法
+        ```
+        CREATE EXTERNAL TABLE emp_external(
+        empno int,
+        ename string,
+        job string,
+        mgr int,
+        hiredate string,
+        sal double,
+        comm double,
+        deptno int
+        ) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t'
+        LOCATION '/external/emp/';
+        
+        LOAD DATA LOCAL INPATH '/home/hadoop/data/emp.txt' OVERWRITE INTO TABLE emp_external;
+        ```
+    - 删除表: HDFS上的数据不被删除，Meta信息被删除
+    - 因此外表更安全，有限考虑使用这种表
+    
+### 8-3 track_info分区表的创建
+- 建分区表
+    ```
+    create external table track_info(
+    ip string,
+    country string,
+    province string, 
+    city string,
+    usl string,
+    time string,
+    page string
+    ) partitioned by (day string)
+    ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t' 
+    LOCATION '/project/trackinfo/';
+    
+    LOAD DATA INPATH 'hdfs://hadoop000:8020/eshopproject/input/etl' OVERWRITE INTO TABLE track_info partition(day='2013-07-21');
+    ```
+
+### 8-4 执行etl
+
+### 8-5 使用hive完成统计功能
+- 统计sql
+    ```
+    # pv
+    select count(*) from track_info where day='2013-07-21';
+    
+    # province
+    select province, count(*) as cnt from track_info where day='2013-07-21' group by province;
+    
+    # 省份统计结果目标表
+    create table track_info_province_stat(
+    province string,
+    cnt bigint
+    ) partitioned by (day string)
+    ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t';
+
+    insert overwrite table track_info_province_stat partition(day='2013-07-21') select province, count(*) as cnt from track_info where day='2013-07-21' group by province;
+    
+    select * from track_info_province_stat; 
+    ```
+
+### 8-6 总结
+- 只用MR写个ETL，之后所有尽量用hive，用hive做ETL需要些udf函数
+- 如果一个框架不能落地到SQL层面，这个框架就不是一个非常适合的框架
