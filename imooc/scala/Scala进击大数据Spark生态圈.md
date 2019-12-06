@@ -213,7 +213,7 @@
     - 实践
         ```
         scala> Range(1,10)
-    res2: scala.collection.immutable.Range = Range(1, 2, 3, 4, 5, 6, 7, 8, 9)
+        res2: scala.collection.immutable.Range = Range(1, 2, 3, 4, 5, 6, 7, 8, 9)
     
         scala> Range(1,10,2)
         res4: scala.collection.immutable.Range = Range(1, 3, 5, 7, 9)
