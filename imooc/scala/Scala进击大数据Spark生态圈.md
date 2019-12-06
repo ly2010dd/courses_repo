@@ -520,7 +520,7 @@
 - Option&Some&None
 - Tuple
 
-### 5-2 5-3 定长数组 变长数据组
+### 5-2 5-3 定长数组 变长数组
 - 实践
     ```
     package com.imooc.scala.course05
