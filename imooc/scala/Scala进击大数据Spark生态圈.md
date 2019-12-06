@@ -243,10 +243,6 @@
           println(i)
         }
         
-        for (i <- 1 to 10) {
-          println(i)
-        }
-        
         val courses = Array("Hadoop", "Spark", "Zookeeper", "Kafka")
         for (course <- courses) {
           println(course)
