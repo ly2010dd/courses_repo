@@ -175,7 +175,7 @@
       println("Say Hello: " + name)
     }
 
-    // 明明参数
+    // 命名参数
     println(speed(100, 10))
     println(speed(distance = 100, time = 10))
     println(speed(time = 10, distance = 100)) // 少见，不建议
